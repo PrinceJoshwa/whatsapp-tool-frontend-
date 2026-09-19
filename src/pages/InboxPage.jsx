@@ -193,6 +193,11 @@ export default function InboxPage() {
           onStatusChange={(s) => patchConversation({ status: s })}
           onAssign={(uid) => patchConversation({ assigned_to: uid })}
           onContactUpdated={fetchConversations}
+          onDeleted={() => {
+            setSelectedId(null);
+            setMessages([]);
+            fetchConversations();
+          }}
         />
       )}
     </div>

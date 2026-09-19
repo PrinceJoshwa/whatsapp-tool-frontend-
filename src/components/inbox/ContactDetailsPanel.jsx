@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Plus, X, UserRound } from "lucide-react";
+import { Plus, X, UserRound, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,8 +12,9 @@ const STATUS_STYLES = {
   resolved: "border-slate-500/50 text-slate-300 bg-slate-500/10",
 };
 
-export default function ContactDetailsPanel({ conversation, members, notes, onStatusChange, onAssign, onContactUpdated }) {
+export default function ContactDetailsPanel({ conversation, members, notes, onStatusChange, onAssign, onContactUpdated, onDeleted }) {
   const [labelInput, setLabelInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const labels = conversation.contact_labels || [];
 
   const saveLabels = async (next) => {
@@ -32,6 +33,20 @@ export default function ContactDetailsPanel({ conversation, members, notes, onSt
     setLabelInput("");
   };
 
+  const deleteContact = async () => {
+    if (!window.confirm(`Delete ${conversation.contact_name || conversation.contact_phone} and its local conversation history? This will not delete WhatsApp.`)) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/contacts/${conversation.contact_id}`);
+      toast.success("Contact and local history deleted");
+      onDeleted();
+    } catch (e) {
+      toast.error(apiError(e));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <aside className="hidden xl:flex w-80 flex-shrink-0 border-l border-[#1E2A32] bg-[#0E1317] flex-col overflow-y-auto p-5 space-y-6" data-testid="contact-details-panel">
       <section>
@@ -48,6 +63,18 @@ export default function ContactDetailsPanel({ conversation, members, notes, onSt
         {conversation.created_at && (
           <p className="text-[11px] text-slate-600 mt-2">Since {format(new Date(conversation.created_at), "dd MMM yyyy")}</p>
         )}
+      </section>
+
+      <section className="pt-2 border-t border-[#1E2A32]">
+        <button
+          data-testid="inbox-contact-delete-button"
+          onClick={deleteContact}
+          disabled={deleting}
+          className="w-full h-9 rounded-full border border-red-500/40 text-red-300 hover:bg-red-500/10 text-xs font-bold transition-colors duration-150 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+          Delete contact and history
+        </button>
       </section>
 
       <section>
