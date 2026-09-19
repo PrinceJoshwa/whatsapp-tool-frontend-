@@ -51,6 +51,30 @@ export default function SettingsPage() {
     setInstanceName(tenant?.evolution_instance_name || "");
   }, [tenant?.evolution_instance_name]);
 
+  useEffect(() => {
+    if (!qrOpen || !tenant?.evolution_instance_name) return undefined;
+    let active = true;
+    const poll = async () => {
+      try {
+        const res = await api.get("/tenant/evolution/status");
+        if (active && res.data.state === "open") {
+          setEvoState("open");
+          setQrOpen(false);
+          setQrImage(null);
+          toast.success("WhatsApp connected successfully");
+        }
+      } catch (e) {
+        // Keep the QR dialog available while the instance is starting.
+      }
+    };
+    poll();
+    const timer = setInterval(poll, 2500);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [qrOpen, tenant?.evolution_instance_name]);
+
   if (!tenant) return null;
 
   const webhookUrl = `${process.env.REACT_APP_BACKEND_URL}/api/webhook/inbound/${tenant.id}`;
@@ -104,6 +128,10 @@ export default function SettingsPage() {
     try {
       const res = await api.get("/tenant/evolution/status");
       setEvoState(res.data.state || "unknown");
+      if (res.data.state === "open") {
+        setQrOpen(false);
+        setQrImage(null);
+      }
       if (res.data.error) toast.error(res.data.error);
     } catch (e) {
       toast.error(apiError(e));
@@ -118,6 +146,8 @@ export default function SettingsPage() {
       const res = await api.get("/tenant/evolution/qrcode");
       if (res.data.state === "open") {
         setEvoState("open");
+        setQrOpen(false);
+        setQrImage(null);
         toast.success("Instance is already connected");
         return;
       }
