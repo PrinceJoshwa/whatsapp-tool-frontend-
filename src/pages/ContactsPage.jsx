@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { Search, Pencil, Loader2, X, Plus } from "lucide-react";
+import { Search, Pencil, Loader2, X, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import api, { apiError } from "@/lib/api";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -16,6 +16,7 @@ export default function ContactsPage() {
   const [form, setForm] = useState({ name: "", labels: [], notes: "" });
   const [labelInput, setLabelInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     try {
@@ -51,6 +52,21 @@ export default function ContactsPage() {
       toast.error(apiError(e));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!editing || !window.confirm(`Delete ${editing.name || editing.phone} and its local conversation history? This will not delete WhatsApp.`)) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/contacts/${editing.id}`);
+      toast.success("Contact and local history deleted");
+      setEditing(null);
+      load();
+    } catch (e) {
+      toast.error(apiError(e));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -207,6 +223,16 @@ export default function ContactsPage() {
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               Save contact
+            </button>
+            <button
+              data-testid="contact-delete-button"
+              onClick={remove}
+              disabled={deleting}
+              title="Delete contact and local history"
+              className="w-full h-10 rounded-full border border-red-500/40 text-red-300 hover:bg-red-500/10 font-bold text-sm transition-colors duration-150 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              Delete contact and local history
             </button>
           </div>
         </DialogContent>
