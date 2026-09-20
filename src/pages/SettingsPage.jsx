@@ -45,6 +45,7 @@ export default function SettingsPage() {
   const [qrOpen, setQrOpen] = useState(false);
   const [qrImage, setQrImage] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const isAdmin = user?.role === "admin";
 
   useEffect(() => {
@@ -164,6 +165,22 @@ export default function SettingsPage() {
     }
   };
 
+  const logoutWhatsApp = async () => {
+    if (!window.confirm("Log out this WhatsApp device? You can reconnect later by scanning a new QR code.")) return;
+    setLoggingOut(true);
+    try {
+      await api.delete("/tenant/evolution/logout");
+      setEvoState("close");
+      setQrOpen(false);
+      setQrImage(null);
+      toast.success("WhatsApp device logged out");
+    } catch (e) {
+      toast.error(apiError(e));
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   return (
     <div className="h-full overflow-y-auto p-6 lg:p-10" data-testid="settings-page">
       <div className="max-w-3xl space-y-6">
@@ -272,6 +289,18 @@ export default function SettingsPage() {
                 {qrLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Connect WhatsApp
               </button>
+              {isAdmin && (
+                <button
+                  data-testid="evolution-logout-button"
+                  onClick={logoutWhatsApp}
+                  disabled={loggingOut || !tenant.evolution_instance_name}
+                  title="Log out the linked WhatsApp device"
+                  className="h-9 px-4 rounded-full border border-red-500/40 text-red-300 text-xs font-semibold hover:bg-red-500/10 transition-colors duration-150 disabled:opacity-40 flex items-center gap-1.5"
+                >
+                  {loggingOut && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Log out device
+                </button>
+              )}
               {evoState && (
                 <span data-testid="evolution-status-badge" className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${evoState === "open" ? "bg-emerald-500/10 border border-emerald-500/40 text-emerald-300" : "bg-amber-500/10 border border-amber-500/40 text-amber-300"}`}>
                   {evoState === "open" ? "Connected" : evoState}
