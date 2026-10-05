@@ -46,6 +46,7 @@ export default function SettingsPage() {
   const [qrImage, setQrImage] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [syncingHistory, setSyncingHistory] = useState(false);
   const isAdmin = user?.role === "admin";
 
   useEffect(() => {
@@ -181,6 +182,18 @@ export default function SettingsPage() {
     }
   };
 
+  const syncHistory = async () => {
+    setSyncingHistory(true);
+    try {
+      const res = await api.post("/tenant/evolution/sync-history");
+      toast.success(`Imported ${res.data.imported} old message${res.data.imported === 1 ? "" : "s"}`);
+    } catch (e) {
+      toast.error(apiError(e));
+    } finally {
+      setSyncingHistory(false);
+    }
+  };
+
   return (
     <div className="h-full overflow-y-auto p-6 lg:p-10" data-testid="settings-page">
       <div className="max-w-3xl space-y-6">
@@ -299,6 +312,18 @@ export default function SettingsPage() {
                 >
                   {loggingOut && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Log out device
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  data-testid="evolution-sync-history-button"
+                  onClick={syncHistory}
+                  disabled={syncingHistory || !tenant.evolution_instance_name}
+                  title="Import existing WhatsApp messages from Evolution API"
+                  className="h-9 px-4 rounded-full border border-sky-500/40 text-sky-300 text-xs font-semibold hover:bg-sky-500/10 transition-colors duration-150 disabled:opacity-40 flex items-center gap-1.5"
+                >
+                  {syncingHistory && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Sync old messages
                 </button>
               )}
               {evoState && (
