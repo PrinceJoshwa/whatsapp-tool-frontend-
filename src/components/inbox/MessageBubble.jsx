@@ -2,12 +2,26 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { FileText, Download, StickyNote, CheckCheck } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { mediaUrl } from "@/lib/api";
+import api, { mediaUrl } from "@/lib/api";
 
 export default function MessageBubble({ message: m }) {
   const [lightbox, setLightbox] = useState(false);
   const time = m.created_at ? format(new Date(m.created_at), "HH:mm") : "";
   const outbound = m.direction === "outbound";
+
+  const downloadAttachment = async (event) => {
+    event.preventDefault();
+    if (!m.id) return;
+    const response = await api.get(`/messages/${m.id}/media`, { responseType: "blob" });
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = m.filename || "attachment";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   if (m.is_note || m.type === "note") {
     return (
@@ -74,11 +88,12 @@ export default function MessageBubble({ message: m }) {
               <p className="text-[13px] font-semibold text-slate-100 truncate">{m.filename || "Document"}</p>
               {m.caption && <p className="text-xs text-slate-400 truncate">{m.caption}</p>}
             </div>
-            {m.media_url && (
+            {(m.media_url || m.id) && (
               <a
-                href={mediaUrl(m.media_url)}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={m.media_url ? mediaUrl(m.media_url) : "#"}
+                onClick={m.id ? downloadAttachment : undefined}
+                target={m.id ? undefined : "_blank"}
+                rel={m.id ? undefined : "noopener noreferrer"}
                 className="h-8 w-8 rounded-lg bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-300 hover:bg-emerald-500/25 transition-colors duration-150 flex-shrink-0"
               >
                 <Download className="h-4 w-4" />
