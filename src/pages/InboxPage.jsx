@@ -108,7 +108,8 @@ export default function InboxPage() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("caption", caption || "");
-      const res = await api.post(`/conversations/${selectedId}/send-file`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        // Let Axios/browser set the multipart boundary for the FormData request.
+        const res = await api.post(`/conversations/${selectedId}/send-file`, fd);
       setMessages((m) => [...m, res.data]);
       fetchConversations();
       toast.success("Attachment sent");
