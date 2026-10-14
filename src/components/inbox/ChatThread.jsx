@@ -183,7 +183,7 @@ export default function ChatThread({ conversation, messages, members, onStatusCh
               </div>
             )}
             <div className="flex items-end gap-2">
-              <input ref={fileRef} type="file" className="hidden" data-testid="reply-file-input" onChange={onPickFile} />
+                <input ref={fileRef} type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" className="hidden" data-testid="reply-file-input" onChange={onPickFile} />
               <button type="button" data-testid="reply-attach-button" onClick={() => fileRef.current?.click()} title="Attach file (image, video, audio, document)" className="h-10 w-10 rounded-full bg-[#131A1F] border border-[#1E2A32] text-slate-400 hover:text-emerald-300 hover:border-emerald-500/40 flex items-center justify-center transition-colors duration-150 flex-shrink-0">
                 <Paperclip className="h-4 w-4" />
               </button>
